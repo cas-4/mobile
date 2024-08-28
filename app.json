@@ -31,6 +31,15 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "b4909812-6c7a-408e-9955-b5e34c6d35b1"
+      }
+    },
+    "owner": "unibo"
   }
 }

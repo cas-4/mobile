@@ -4,7 +4,6 @@ import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import React, { useState, useEffect } from 'react';
-import { API_URL } from '@env';
 import AsyncStorage from '@react-native-async-storage/async-storage';  
 
 
@@ -28,7 +27,7 @@ export default function HomeScreen() {
     }
 
     try {
-      const response = await fetch(`${API_URL}/graphql`, {
+      const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/graphql`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -108,7 +107,6 @@ export default function HomeScreen() {
                 style={styles.formInput}
                 onChangeText={setUsername}
                 value={username}
-                placeholder="Username"
               />
             </View>
             <View>
@@ -117,7 +115,6 @@ export default function HomeScreen() {
                 style={styles.formInput}
                 onChangeText={setPassword}
                 value={password}
-                placeholder="Password"
                 secureTextEntry
               />
             </View>

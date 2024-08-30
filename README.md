@@ -2,5 +2,5 @@
 
 ```
 # .env
-API_URL=
+EXPO_PUBLIC_API_URL=
 ```

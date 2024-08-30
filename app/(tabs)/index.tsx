@@ -1,16 +1,19 @@
 import { Alert, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import React, { useState, useEffect } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';  
-
+import React, { useState, useEffect, useRef } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import MapView, { Marker } from 'react-native-maps';
 
 export default function HomeScreen() {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [token, setToken] = useState('');
+  const [userId, setUserId] = useState('');
+  const [coordinates, setCoordinates] = useState({ latitude: 44.49738301084014, longitude: 11.356121722966094 });
+  const [region, setRegion] = useState({ latitude: 44.49738301084014, longitude: 11.356121722966094, latitudeDelta: 0.03, longitudeDelta: 0.03 });
+  const mapRef = useRef(null);
 
   const storeToken = async (token: string) => {
     if (Platform.OS === 'web') {
@@ -20,9 +23,17 @@ export default function HomeScreen() {
     }
   };
 
+  const storeUserId = async (userId: string) => {
+    if (Platform.OS === 'web') {
+      localStorage.setItem('userId', userId);
+    } else {
+      await AsyncStorage.setItem('userId', userId);
+    }
+  };
+
   const handleLogin = async () => {
-    if (!username || !password) {
-      Alert.alert('Error', 'Username and password are required.');
+    if (!email || !password) {
+      Alert.alert('Error', 'Email and password are required.');
       return;
     }
 
@@ -38,11 +49,12 @@ export default function HomeScreen() {
               login(input: $input) { 
                 accessToken 
                 tokenType 
+                userId
               } 
             }`,
           variables: {
             input: {
-              email: username,
+              email: email,
               password,
             },
           },
@@ -55,9 +67,11 @@ export default function HomeScreen() {
         const errorMessages = data.errors.map((error: any) => error.message);
         Alert.alert('Error', errorMessages.join('\n'));
       } else {
-        const { accessToken } = data.data.login;
+        const { accessToken, userId } = data.data.login;
         await storeToken(accessToken);
+        await storeUserId(String(userId));
         setToken(accessToken);
+        setUserId(String(userId));
       }
     } catch (err) {
       console.error('Login Error:', err);
@@ -73,8 +87,42 @@ export default function HomeScreen() {
   const removeToken = async () => {
     if (Platform.OS === 'web') {
       localStorage.removeItem('token');
+      localStorage.removeItem('userId');
     } else {
       await AsyncStorage.removeItem('token');
+      await AsyncStorage.removeItem('userId');
+    }
+  };
+
+  const fetchMapData = async () => {
+    if (!token || !userId) return;
+
+    try {
+      const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/graphql`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          query: `{ positions(userId: ${userId}) { id, userId, createdAt, latitude, longitude } }`,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.data.positions && data.data.positions.length > 0) {
+        const position = data.data.positions[0];
+        setCoordinates({ latitude: position.latitude, longitude: position.longitude });
+        setRegion({
+          latitude: position.latitude,
+          longitude: position.longitude,
+          latitudeDelta: 0.03,
+          longitudeDelta: 0.03,
+        });
+      }
+    } catch (err) {
+      console.error('Fetch Map Data Error:', err);
     }
   };
 
@@ -82,19 +130,46 @@ export default function HomeScreen() {
     const retrieveToken = async () => {
       const storedToken = Platform.OS === 'web' ? localStorage.getItem('token') : await AsyncStorage.getItem('token');
       setToken(storedToken || '');
+      const storedUserId = Platform.OS === 'web' ? localStorage.getItem('userId') : await AsyncStorage.getItem('userId');
+      setUserId(storedUserId || '');
     };
 
     retrieveToken();
   }, []);
 
+  useEffect(() => {
+    if (token && userId) {
+      const intervalId = setInterval(fetchMapData, 10000); // Fetch map data every 10 seconds
+
+      return () => clearInterval(intervalId);
+    }
+  }, [token, userId]);
+
+  useEffect(() => {
+    if (mapRef.current && region) {
+      mapRef.current.animateToRegion(region, 1000); // Smoothly animate to the new region
+    }
+  }, [region]);
+
   return (
     <ParallaxScrollView>
-      {token ? (
-        <ThemedView> 
-          <Pressable onPress={handleLogout} style={styles.formButton}>
-            <Text style={{ color: 'white', textAlign: 'center' }}>Logout</Text>
-          </Pressable>
-        </ThemedView>
+      {token && userId ? (
+        <>
+          <ThemedView>
+            <Pressable onPress={handleLogout} style={styles.formButton}>
+              <Text style={{ color: 'white', textAlign: 'center' }}>Logout</Text>
+            </Pressable>
+          </ThemedView>
+          <View>
+            <MapView
+              ref={mapRef}
+              initialRegion={region}
+              style={styles.map}
+            >
+              <Marker coordinate={coordinates} title="Start Point" />
+            </MapView>
+          </View>
+        </>
       ) : (
         <>
           <ThemedView style={styles.titleContainer}>
@@ -102,11 +177,11 @@ export default function HomeScreen() {
           </ThemedView>
           <ThemedView style={styles.formContainer}>
             <View>
-              <ThemedText style={styles.text}>Username</ThemedText>
+              <ThemedText style={styles.text}>Email</ThemedText>
               <TextInput
                 style={styles.formInput}
-                onChangeText={setUsername}
-                value={username}
+                onChangeText={setEmail}
+                value={email}
               />
             </View>
             <View>
@@ -166,6 +241,8 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     borderRadius: 8,
     color: 'white',
+  },
+  map: {
+    height: 400,
   }
 });
-

@@ -213,7 +213,6 @@ const styles = StyleSheet.create({
   },
   text: {
     marginBottom: 8,
-    color: '#333',
   },
   formContainer: {
     marginTop: 20,

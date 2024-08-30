@@ -46,7 +46,8 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: 'bold',
-    lineHeight: 32,
+    textAlign: 'center',
+    fontFamily: 'SpaceMono',
   },
   subtitle: {
     fontSize: 20,

@@ -166,7 +166,7 @@ export default function HomeScreen() {
               initialRegion={region}
               style={styles.map}
             >
-              <Marker coordinate={coordinates} title="Start Point" />
+              <Marker coordinate={coordinates} title="Me" />
             </MapView>
           </View>
         </>

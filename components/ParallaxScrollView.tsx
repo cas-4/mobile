@@ -1,33 +1,27 @@
-import type { PropsWithChildren, ReactElement } from 'react';
-import { StyleSheet, Text, View, useColorScheme } from 'react-native';
-import Animated, {
-  interpolate,
-  useAnimatedRef,
-  useAnimatedStyle,
-  useScrollViewOffset,
-} from 'react-native-reanimated';
+import type { PropsWithChildren, } from 'react';
+import { StyleSheet, View, useColorScheme } from 'react-native';
 
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from './ThemedText';
 
-const HEADER_HEIGHT = 250;
+type Props = PropsWithChildren<{}>;
 
-type Props = PropsWithChildren<{
-}>;
 
 export default function ParallaxScrollView({
   children,
 }: Props) {
-  const scrollRef = useAnimatedRef<Animated.ScrollView>();
+  const theme = useColorScheme() ?? 'light';
 
   return (
     <ThemedView style={styles.container}>
-      <Animated.ScrollView ref={scrollRef} scrollEventThrottle={16}>
-        <View style={styles.nav}>
-          <ThemedText type="title">CAS4</ThemedText>
-        </View>
-        <ThemedView style={styles.content}>{children}</ThemedView>
-      </Animated.ScrollView>
+      <View style={{
+        paddingTop: 50,
+        padding: 10, 
+        backgroundColor: (theme === 'light' ? 'rgba(0, 0, 0, .5)' : 'rgba(100, 100, 100, .5)'),
+      }}>
+        <ThemedText type="title" style={{ color: 'white' }}>CAS4</ThemedText>
+      </View>
+      <ThemedView style={styles.content}>{children}</ThemedView>
     </ThemedView>
   );
 }
@@ -37,7 +31,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   nav: {
-    backgroundColor: 'rgba(10, 10, 10, .5)',
     paddingTop: 50,
     padding: 10,
   },

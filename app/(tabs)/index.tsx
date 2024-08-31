@@ -139,7 +139,7 @@ export default function HomeScreen() {
 
   useEffect(() => {
     if (token && userId) {
-      const intervalId = setInterval(fetchMapData, 10000); // Fetch map data every 10 seconds
+      const intervalId = setInterval(fetchMapData, 10000);
 
       return () => clearInterval(intervalId);
     }
@@ -147,7 +147,7 @@ export default function HomeScreen() {
 
   useEffect(() => {
     if (mapRef.current && region) {
-      mapRef.current.animateToRegion(region, 1000); // Smoothly animate to the new region
+      mapRef.current.animateToRegion(region, 1000);
     }
   }, [region]);
 
@@ -173,7 +173,7 @@ export default function HomeScreen() {
       ) : (
         <>
           <ThemedView style={styles.titleContainer}>
-            <ThemedText type="title">Welcome, mate!</ThemedText>
+            <ThemedText type="subtitle">Welcome, mate!</ThemedText>
           </ThemedView>
           <ThemedView style={styles.formContainer}>
             <View>

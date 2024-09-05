@@ -5,6 +5,63 @@ import { ThemedView } from '@/components/ThemedView';
 import React, { useState, useEffect, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import MapView, { Marker } from 'react-native-maps';
+import * as Notifications from 'expo-notifications';
+import * as Device from 'expo-device';
+import Constants from 'expo-constants';
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+  }),
+});
+
+
+function handleRegistrationError(errorMessage: string) {
+  Alert.alert("Error registering this device", errorMessage);
+}
+
+async function registerForPushNotificationsAsync() {
+  if (Platform.OS === 'android') {
+    Notifications.setNotificationChannelAsync('default', {
+      name: 'default',
+      importance: Notifications.AndroidImportance.MAX,
+      vibrationPattern: [0, 250, 250, 250],
+      lightColor: '#007AFF',
+    });
+  }
+
+  if (Device.isDevice) {
+    const { status: existingStatus } = await Notifications.getPermissionsAsync();
+    let finalStatus = existingStatus;
+    if (existingStatus !== 'granted') {
+      const { status } = await Notifications.requestPermissionsAsync();
+      finalStatus = status;
+    }
+    if (finalStatus !== 'granted') {
+      handleRegistrationError('Permission not granted to get push token for push notification!');
+      return;
+    }
+    const projectId =
+      Constants?.expoConfig?.extra?.eas?.projectId ?? Constants?.easConfig?.projectId;
+    if (!projectId) {
+      handleRegistrationError('Project ID not found');
+    }
+    try {
+      const pushTokenString = (
+        await Notifications.getExpoPushTokenAsync({
+          projectId,
+        })
+      ).data;
+      return pushTokenString;
+    } catch (e: unknown) {
+      handleRegistrationError(`${e}`);
+    }
+  } else {
+    handleRegistrationError('Must use physical device for push notifications');
+  }
+}
 
 export default function HomeScreen() {
   const [email, setEmail] = useState('');
@@ -72,6 +129,38 @@ export default function HomeScreen() {
         await storeUserId(String(userId));
         setToken(accessToken);
         setUserId(String(userId));
+
+        registerForPushNotificationsAsync()
+          .then(async notificationToken => {
+            if (!notificationToken) return;
+
+            const regex = /ExponentPushToken\[(.*?)\]/;
+            const match = notificationToken.match(regex);
+
+            if (match && match[1]) {
+                notificationToken = match[1];
+            }
+              await fetch(`${process.env.EXPO_PUBLIC_API_URL}/graphql`, {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${accessToken}`,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  query: `
+                    mutation RegisterDevice($input: RegisterNotificationToken!) {
+                      registerDevice(input: $input) { id name email }
+                    }
+                  `,
+                  variables: {
+                    input: {
+                      token: notificationToken,
+                    },
+                  },
+                }),
+              })
+          })
+          .catch((error: any) => alert(`${error}`));
       }
     } catch (err) {
       console.error('Login Error:', err);

@@ -1,10 +1,11 @@
-# CAS4 mobile app
+ # CAS4 mobile app
+ 
+<img src="https://avatars.githubusercontent.com/u/175958109?s=100&v=4" alt="Logo" align="right"/>
 
 This repo refers to a React Native mobile app used for a project for the
 [Context Aware System](https://www.unibo.it/en/study/phd-professional-masters-specialisation-schools-and-other-programmes/course-unit-catalogue/course-unit/2023/479036)
 class at the [University of Bologna](https://unibo.it).
 
----
 
 ## Development
 

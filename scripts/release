@@ -1,0 +1,10 @@
+if [ $# -eq 0 ]; then
+    echo "You must pass the version number."
+    exit 1
+fi
+
+sed -i "4s/.*/  \"version\": \"$1\",/" package.json
+pnpm i
+git add package.* pnpm-lock.yaml
+git commit -m "release: version $1"
+git tag -a "v$1" -m "Version $1"

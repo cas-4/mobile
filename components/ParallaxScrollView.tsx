@@ -1,11 +1,10 @@
-import { useState, type PropsWithChildren, useCallback, useEffect, } from 'react';
-import { StyleSheet, SafeAreaView, useColorScheme, View, Text, Platform } from 'react-native';
+import { useState, type PropsWithChildren,  useEffect, } from 'react';
+import { StyleSheet, SafeAreaView, useColorScheme, View, Text, Pressable } from 'react-native';
 
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from './ThemedText';
 import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useFocusEffect } from 'expo-router';
+import { router } from 'expo-router';
 
 
 type Props = PropsWithChildren<{
@@ -53,7 +52,9 @@ export default function ParallaxScrollView({
     };
 
     if (token && userId) {
-      fetchNotifications();
+      const intervalId = setInterval(fetchNotifications, 2000);
+
+      return () => clearInterval(intervalId);
     } else {
       setNotifications([]);
     }
@@ -65,21 +66,21 @@ export default function ParallaxScrollView({
         backgroundColor: (theme === 'light' ? 'rgba(0, 0, 0, .5)' : 'rgba(100, 100, 100, .5)'),
       }}>
         <ThemedText type="title" style={{ color: 'white', paddingVertical: 10 }}>CAS4</ThemedText>
-        { notifications.length > 0 ? (
           <SafeAreaView>
-            <View style={styles.notificationCircle}>
-              <Text style={styles.notificationCircleText}>{ notifications.length }</Text>
-            </View>
-            <Ionicons
-              name="notifications-outline"
-              size={32}
-              style={styles.notification}
-            />
+            {token && userId ? (
+              <Pressable onPress={() => router.push('/notifications')} style={styles.notificationWrapper}>
+                {notifications.length > 0 && (
+                  <View style={styles.notificationCircle}>
+                    <Text style={styles.notificationCircleText}>{notifications.length}</Text>
+                  </View>
+                )}
+                <Ionicons name="notifications-outline" size={32} color="white" />
+              </Pressable>
+            ) : (
+              <>
+              </>
+            )}
           </SafeAreaView>
-        ) : (
-          <>
-          </>
-        )}
       </SafeAreaView>
       <ThemedView style={styles.content}>{children}</ThemedView>
     </ThemedView>
@@ -104,10 +105,10 @@ const styles = StyleSheet.create({
     gap: 16,
     overflow: 'hidden',
   },
-  notification: {
+  notificationWrapper: {
     color: '#fff',
     position: 'absolute',
-    bottom: 10,
+    bottom: 15,
     right: 30,
   },
   notificationCircle: {
@@ -116,8 +117,8 @@ const styles = StyleSheet.create({
     borderRadius: 100,
     backgroundColor: '#EA2027',
     position: 'absolute',
-    bottom: 30,
-    right: 30,
+    top: -5,
+    right: 0,
     zIndex: 1,
   },
   notificationCircleText: {

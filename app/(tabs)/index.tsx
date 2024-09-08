@@ -95,7 +95,6 @@ export default function HomeScreen() {
     }
 
     try {
-      console.log(`${process.env.EXPO_PUBLIC_API_URL}/graphql`)
       const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/graphql`, {
         method: 'POST',
         headers: {

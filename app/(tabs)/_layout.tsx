@@ -36,6 +36,14 @@ export default function TabLayout() {
         name="alerts/[id]"
         options={{href: null}}
       />
+      <Tabs.Screen
+        name="notifications/index"
+        options={{href: null}}
+      />
+      <Tabs.Screen
+        name="notifications/[id]"
+        options={{href: null}}
+      />
     </Tabs>
   );
 }

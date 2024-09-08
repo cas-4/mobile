@@ -230,7 +230,7 @@ export default function HomeScreen() {
 
   useEffect(() => {
     if (token && userId) {
-      const intervalId = setInterval(fetchMapData, 10000);
+      const intervalId = setInterval(fetchMapData, 100000);
 
       return () => clearInterval(intervalId);
     }

@@ -1,5 +1,5 @@
 import type { PropsWithChildren, } from 'react';
-import { StyleSheet, View, useColorScheme } from 'react-native';
+import { StyleSheet, SafeAreaView, useColorScheme } from 'react-native';
 
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from './ThemedText';
@@ -14,13 +14,11 @@ export default function ParallaxScrollView({
 
   return (
     <ThemedView style={styles.container}>
-      <View style={{
-        paddingTop: 50,
-        padding: 10, 
+      <SafeAreaView style={{
         backgroundColor: (theme === 'light' ? 'rgba(0, 0, 0, .5)' : 'rgba(100, 100, 100, .5)'),
       }}>
         <ThemedText type="title" style={{ color: 'white' }}>CAS4</ThemedText>
-      </View>
+      </SafeAreaView>
       <ThemedView style={styles.content}>{children}</ThemedView>
     </ThemedView>
   );

@@ -8,6 +8,12 @@ import MapView, { Marker } from 'react-native-maps';
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import Constants from 'expo-constants';
+import { Link } from 'expo-router';
+
+interface NotificationData {
+  id: string;
+  createdAt: string;
+}
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -70,6 +76,7 @@ export default function HomeScreen() {
   const [userId, setUserId] = useState('');
   const [coordinates, setCoordinates] = useState({ latitude: 44.49738301084014, longitude: 11.356121722966094 });
   const [region, setRegion] = useState({ latitude: 44.49738301084014, longitude: 11.356121722966094, latitudeDelta: 0.03, longitudeDelta: 0.03 });
+  const [notification, setNotification] = useState<NotificationData|null>(null);
   const mapRef = useRef(null);
 
   const storeToken = async (token: string) => {
@@ -216,6 +223,50 @@ export default function HomeScreen() {
     }
   };
 
+  const formatDate = (timestamp: string) => {
+    const date = new Date(parseInt(timestamp) * 1000);
+    return `${date.toDateString()} ${date.getHours()}:${(date.getMinutes() < 10 ? '0' : '') + date.getMinutes()}`;
+  };
+
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      if (!token || !userId) return;
+
+      try {
+        const response = await fetch(
+          `${process.env.EXPO_PUBLIC_API_URL}/graphql`,
+          {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              query: `{ notifications(seen: false) { id, createdAt } }`,
+            }),
+          }
+        );
+
+        const data = await response.json();
+
+        if (data.data.notifications) {
+          setNotification(data.data.notifications[0]);
+        }
+      } catch (err) {
+        console.error('Fetch notifications:', err);
+      }
+    };
+
+    if (token && userId) {
+      const intervalId = setInterval(fetchNotifications, 2000);
+
+      return () => clearInterval(intervalId);
+    } else {
+      setNotification('');
+    }
+  }, [token, userId]);
+
+
   useEffect(() => {
     const retrieveToken = async () => {
       const storedToken = Platform.OS === 'web' ? localStorage.getItem('token') : await AsyncStorage.getItem('token');
@@ -245,6 +296,22 @@ export default function HomeScreen() {
     <ParallaxScrollView token={token} userId={userId}>
       {token && userId ? (
         <>
+          {notification ? (
+            <View>
+              <Link
+                href={`/notifications/${notification.id}`}
+                style={{ width: '100%' }}
+              >
+              <View style={styles.notificationBox}>
+                <Text style={styles.notificationBoxText}>Oh no, you are (or have been) in an alerted area in {formatDate(notification.createdAt)}!</Text>
+                <Text style={styles.notificationBoxText}>Click this banner to know more!</Text>
+              </View>
+              </Link>
+            </View>
+          ) : (
+            <>
+            </>
+          )}
           <ThemedView>
             <Pressable onPress={handleLogout} style={styles.formButton}>
               <Text style={{ color: 'white', textAlign: 'center' }}>Logout</Text>
@@ -333,5 +400,19 @@ const styles = StyleSheet.create({
   },
   map: {
     height: 400,
+  },
+  notificationBox: {
+    padding: 40,
+    borderRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    backgroundColor: '#EA2027',
+  },
+  notificationBoxText: {
+    color: '#fff',
+    textAlign: 'center',
+    fontWeight: 'bold'
   }
 });

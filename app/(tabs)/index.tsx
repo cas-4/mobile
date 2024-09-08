@@ -95,6 +95,7 @@ export default function HomeScreen() {
     }
 
     try {
+      console.log(`${process.env.EXPO_PUBLIC_API_URL}/graphql`)
       const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/graphql`, {
         method: 'POST',
         headers: {
@@ -170,7 +171,6 @@ export default function HomeScreen() {
 
   const handleLogout = async () => {
     await removeToken();
-    setToken('');
   };
 
   const removeToken = async () => {
@@ -181,6 +181,8 @@ export default function HomeScreen() {
       await AsyncStorage.removeItem('token');
       await AsyncStorage.removeItem('userId');
     }
+    setToken('');
+    setUserId('');
   };
 
   const fetchMapData = async () => {
@@ -241,7 +243,7 @@ export default function HomeScreen() {
   }, [region]);
 
   return (
-    <ParallaxScrollView>
+    <ParallaxScrollView token={token} userId={userId}>
       {token && userId ? (
         <>
           <ThemedView>

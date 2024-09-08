@@ -158,7 +158,7 @@ export default function AlertIdScreen() {
   const theme = useColorScheme() ?? 'light';
 
   return (
-    <ParallaxScrollView>
+    <ParallaxScrollView token={token} userId={userId}>
       {alert === null ? (
         <ThemedView>
           <ThemedText>Loading...</ThemedText>

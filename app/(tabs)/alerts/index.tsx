@@ -29,8 +29,8 @@ export default function AlertsScreen() {
   const [alerts, setAlerts] = useState<AlertData[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
-  const fetchAlerts = async () => {
-    if (!token || !userId) return;
+  const fetchAlerts = async (currentToken: string, currentUserId: string) => {
+    if (!currentToken || !currentUserId) return;
 
     try {
       const response = await fetch(
@@ -38,7 +38,7 @@ export default function AlertsScreen() {
         {
           method: 'POST',
           headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${currentToken}`,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
@@ -52,7 +52,6 @@ export default function AlertsScreen() {
       if (data.errors) {
         Alert.alert('Error', 'Error fetching data');
       } else if (data.data.alerts) {
-        console.log(`Found ${data.data.alerts.length} alerts`);
         setAlerts(data.data.alerts);
       }
     } catch (err) {
@@ -74,6 +73,7 @@ export default function AlertsScreen() {
     setUserId(storedUserId || '');
 
     if (!storedToken || !storedUserId) {
+      setAlerts([]);
       Alert.alert(
         'Login required',
         'You must log in to the system if you want to see alerts list',
@@ -85,19 +85,28 @@ export default function AlertsScreen() {
         ]
       );
     }
+
+    // Fetch alerts only after token and userId are set
+    return { storedToken, storedUserId };
   };
 
   useFocusEffect(
     useCallback(() => {
-      checkAuth();
-      fetchAlerts();
+      const init = async () => {
+        const { storedToken, storedUserId } = await checkAuth();
+        if (storedToken && storedUserId) {
+          fetchAlerts(storedToken, storedUserId);
+        }
+      };
+
+      init();
     }, [])
   );
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-    fetchAlerts().finally(() => setRefreshing(false));
-  }, []);
+    fetchAlerts(token, userId).finally(() => setRefreshing(false));
+  }, [token, userId]);
 
   const formatDate = (timestamp: string) => {
     const date = new Date(parseInt(timestamp) * 1000);
@@ -141,7 +150,7 @@ export default function AlertsScreen() {
   return (
     <FlatList
       ListHeaderComponent={
-        <ParallaxScrollView>
+        <ParallaxScrollView token={token} userId={userId}>
           <ThemedView style={styles.header}>
             <ThemedText type="subtitle">Alerts</ThemedText>
             <ThemedText type="default">
@@ -175,6 +184,7 @@ const styles = StyleSheet.create({
   },
   alertBox: {
     padding: 16,
+    paddingBottom: 14,
     borderRadius: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },

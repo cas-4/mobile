@@ -1,14 +1,38 @@
-import { Alert, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
-import React, { useState, useEffect, useRef } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import MapView, { Marker } from 'react-native-maps';
-import * as Notifications from 'expo-notifications';
-import * as Device from 'expo-device';
-import Constants from 'expo-constants';
-import { Link } from 'expo-router';
+import {
+  Alert,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
+import ParallaxScrollView from "@/components/ParallaxScrollView";
+import { ThemedText } from "@/components/ThemedText";
+import { ThemedView } from "@/components/ThemedView";
+import React, { useState, useEffect, useRef } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import MapView, { LatLng, Marker } from "react-native-maps";
+import * as Notifications from "expo-notifications";
+import * as Device from "expo-device";
+import * as Location from "expo-location";
+import Constants from "expo-constants";
+import { Link } from "expo-router";
+import * as TaskManager from "expo-task-manager";
+
+const LOCATION_TASK_NAME = "background-location-task";
+
+TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
+  if (error) {
+    console.error(error);
+    return;
+  }
+  if (data) {
+    const { locations } = data;
+    console.log("Received new locations:", locations);
+    // Process the locations here
+  }
+});
 
 interface NotificationData {
   id: string;
@@ -23,36 +47,39 @@ Notifications.setNotificationHandler({
   }),
 });
 
-
 function handleRegistrationError(errorMessage: string) {
   Alert.alert("Error registering this device", errorMessage);
 }
 
 async function registerForPushNotificationsAsync() {
-  if (Platform.OS === 'android') {
-    Notifications.setNotificationChannelAsync('default', {
-      name: 'default',
+  if (Platform.OS === "android") {
+    Notifications.setNotificationChannelAsync("default", {
+      name: "default",
       importance: Notifications.AndroidImportance.MAX,
       vibrationPattern: [0, 250, 250, 250],
-      lightColor: '#007AFF',
+      lightColor: "#007AFF",
     });
   }
 
   if (Device.isDevice) {
-    const { status: existingStatus } = await Notifications.getPermissionsAsync();
+    const { status: existingStatus } =
+      await Notifications.getPermissionsAsync();
     let finalStatus = existingStatus;
-    if (existingStatus !== 'granted') {
+    if (existingStatus !== "granted") {
       const { status } = await Notifications.requestPermissionsAsync();
       finalStatus = status;
     }
-    if (finalStatus !== 'granted') {
-      handleRegistrationError('Permission not granted to get push token for push notification!');
+    if (finalStatus !== "granted") {
+      handleRegistrationError(
+        "Permission not granted to get push token for push notification!",
+      );
       return;
     }
     const projectId =
-      Constants?.expoConfig?.extra?.eas?.projectId ?? Constants?.easConfig?.projectId;
+      Constants?.expoConfig?.extra?.eas?.projectId ??
+      Constants?.easConfig?.projectId;
     if (!projectId) {
-      handleRegistrationError('Project ID not found');
+      handleRegistrationError("Project ID not found");
     }
     try {
       const pushTokenString = (
@@ -65,71 +92,84 @@ async function registerForPushNotificationsAsync() {
       handleRegistrationError(`${e}`);
     }
   } else {
-    handleRegistrationError('Must use physical device for push notifications');
+    handleRegistrationError("Must use physical device for push notifications");
   }
 }
 
 export default function HomeScreen() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [token, setToken] = useState('');
-  const [userId, setUserId] = useState('');
-  const [coordinates, setCoordinates] = useState({ latitude: 44.49738301084014, longitude: 11.356121722966094 });
-  const [region, setRegion] = useState({ latitude: 44.49738301084014, longitude: 11.356121722966094, latitudeDelta: 0.03, longitudeDelta: 0.03 });
-  const [notification, setNotification] = useState<NotificationData|null>(null);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [token, setToken] = useState("");
+  const [userId, setUserId] = useState("");
+  const [coordinates, setCoordinates] = useState({
+    latitude: 0,
+    longitude: 0,
+  });
+  const [region, setRegion] = useState({
+    latitude: 0,
+    longitude: 0,
+    latitudeDelta: 0.03,
+    longitudeDelta: 0.03,
+  });
+  const [notification, setNotification] = useState<NotificationData | null>(
+    null,
+  );
   const mapRef = useRef(null);
 
   const storeToken = async (token: string) => {
-    if (Platform.OS === 'web') {
-      localStorage.setItem('token', token);
+    if (Platform.OS === "web") {
+      localStorage.setItem("token", token);
     } else {
-      await AsyncStorage.setItem('token', token);
+      await AsyncStorage.setItem("token", token);
     }
   };
 
   const storeUserId = async (userId: string) => {
-    if (Platform.OS === 'web') {
-      localStorage.setItem('userId', userId);
+    if (Platform.OS === "web") {
+      localStorage.setItem("userId", userId);
     } else {
-      await AsyncStorage.setItem('userId', userId);
+      await AsyncStorage.setItem("userId", userId);
     }
   };
 
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert('Error', 'Email and password are required.');
+      Alert.alert("Error", "Email and password are required.");
       return;
     }
 
     try {
-      const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/graphql`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          query: `
-            mutation Login($input: LoginCredentials!) { 
-              login(input: $input) { 
-                accessToken 
-                tokenType 
-                userId
-              } 
-            }`,
-          variables: {
-            input: {
-              email: email,
-              password,
-            },
+      const response = await fetch(
+        `${process.env.EXPO_PUBLIC_API_URL}/graphql`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
           },
-        }),
-      });
+          body: JSON.stringify({
+            query: `
+            mutation Login($input: LoginCredentials!) {
+              login(input: $input) {
+                accessToken
+                tokenType
+                userId
+              }
+            }`,
+            variables: {
+              input: {
+                email: email,
+                password,
+              },
+            },
+          }),
+        },
+      );
 
       const data = await response.json();
 
       if (data.errors) {
         const errorMessages = data.errors.map((error: any) => error.message);
-        Alert.alert('Error', errorMessages.join('\n'));
+        Alert.alert("Error", errorMessages.join("\n"));
       } else {
         const { accessToken, userId } = data.data.login;
         await storeToken(accessToken);
@@ -138,40 +178,40 @@ export default function HomeScreen() {
         setUserId(String(userId));
 
         registerForPushNotificationsAsync()
-          .then(async notificationToken => {
+          .then(async (notificationToken) => {
             if (!notificationToken) return;
 
             const regex = /ExponentPushToken\[(.*?)\]/;
             const match = notificationToken.match(regex);
 
             if (match && match[1]) {
-                notificationToken = match[1];
+              notificationToken = match[1];
             }
-              await fetch(`${process.env.EXPO_PUBLIC_API_URL}/graphql`, {
-                method: 'POST',
-                headers: {
-                  'Authorization': `Bearer ${accessToken}`,
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                  query: `
+            await fetch(`${process.env.EXPO_PUBLIC_API_URL}/graphql`, {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${accessToken}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                query: `
                     mutation RegisterDevice($input: RegisterNotificationToken!) {
                       registerDevice(input: $input) { id name email }
                     }
                   `,
-                  variables: {
-                    input: {
-                      token: notificationToken,
-                    },
+                variables: {
+                  input: {
+                    token: notificationToken,
                   },
-                }),
-              })
+                },
+              }),
+            });
           })
           .catch((error: any) => alert(`${error}`));
       }
     } catch (err) {
-      console.error('Login Error:', err);
-      Alert.alert('Error', 'An error occurred during login.');
+      console.error("Login Error:", err);
+      Alert.alert("Error", "An error occurred during login.");
     }
   };
 
@@ -180,53 +220,74 @@ export default function HomeScreen() {
   };
 
   const removeToken = async () => {
-    if (Platform.OS === 'web') {
-      localStorage.removeItem('token');
-      localStorage.removeItem('userId');
+    if (Platform.OS === "web") {
+      localStorage.removeItem("token");
+      localStorage.removeItem("userId");
     } else {
-      await AsyncStorage.removeItem('token');
-      await AsyncStorage.removeItem('userId');
+      await AsyncStorage.removeItem("token");
+      await AsyncStorage.removeItem("userId");
     }
-    setToken('');
-    setUserId('');
-  };
-
-  const fetchMapData = async () => {
-    if (!token || !userId) return;
-
-    try {
-      const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/graphql`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          query: `{ positions(userId: ${userId}) { id, userId, createdAt, latitude, longitude } }`,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (data.data.positions && data.data.positions.length > 0) {
-        const position = data.data.positions[0];
-        setCoordinates({ latitude: position.latitude, longitude: position.longitude });
-        setRegion({
-          latitude: position.latitude,
-          longitude: position.longitude,
-          latitudeDelta: 0.03,
-          longitudeDelta: 0.03,
-        });
-      }
-    } catch (err) {
-      console.error('Fetch Map Data Error:', err);
-    }
+    setToken("");
+    setUserId("");
   };
 
   const formatDate = (timestamp: string) => {
     const date = new Date(parseInt(timestamp) * 1000);
-    return `${date.toDateString()} ${date.getHours()}:${(date.getMinutes() < 10 ? '0' : '') + date.getMinutes()}`;
+    return `${date.toDateString()} ${date.getHours()}:${(date.getMinutes() < 10 ? "0" : "") + date.getMinutes()}`;
   };
+
+  const updateLocation = async (coords: LatLng) => {
+    setCoordinates({
+      latitude: coords.latitude,
+      longitude: coords.longitude,
+    });
+
+    if (region.longitude == 0 && region.latitude == 0) {
+    setRegion({
+      latitude: coords.latitude,
+      longitude: coords.longitude,
+      latitudeDelta: 0.03,
+      longitudeDelta: 0.03,
+    });
+    }
+
+
+    if (!token || !userId) return;
+
+    try {
+      const response = await fetch(
+        `${process.env.EXPO_PUBLIC_API_URL}/graphql`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            query: `
+            mutation NewPosition($input: PositionInput!) {
+              newPosition(input: $input) {
+                id userId createdAt latitude longitude movingActivity
+              }
+            }
+            `,
+            variables: {
+              input: {
+                latitude: coords.latitude,
+                longitude: coords.longitude,
+                movingActivity: 'STILL',
+              },
+            },
+          }),
+        },
+      );
+      const data = await response.json();
+      console.log(data)
+    } catch (err) {
+      console.error("Error on updating position"); 
+    }
+
+  }
 
   useEffect(() => {
     const fetchNotifications = async () => {
@@ -236,15 +297,15 @@ export default function HomeScreen() {
         const response = await fetch(
           `${process.env.EXPO_PUBLIC_API_URL}/graphql`,
           {
-            method: 'POST',
+            method: "POST",
             headers: {
               Authorization: `Bearer ${token}`,
-              'Content-Type': 'application/json',
+              "Content-Type": "application/json",
             },
             body: JSON.stringify({
               query: `{ notifications(seen: false) { id, createdAt } }`,
             }),
-          }
+          },
         );
 
         const data = await response.json();
@@ -253,44 +314,74 @@ export default function HomeScreen() {
           setNotification(data.data.notifications[0]);
         }
       } catch (err) {
-        console.error('Fetch notifications:', err);
+        console.error("Fetch notifications:", err);
       }
     };
 
     if (token && userId) {
-      const intervalId = setInterval(fetchNotifications, 2000);
+      const intervalId = setInterval(fetchNotifications, 10000);
 
       return () => clearInterval(intervalId);
     } else {
-      setNotification('');
+      setNotification("");
     }
   }, [token, userId]);
 
-
   useEffect(() => {
     const retrieveToken = async () => {
-      const storedToken = Platform.OS === 'web' ? localStorage.getItem('token') : await AsyncStorage.getItem('token');
-      setToken(storedToken || '');
-      const storedUserId = Platform.OS === 'web' ? localStorage.getItem('userId') : await AsyncStorage.getItem('userId');
-      setUserId(storedUserId || '');
+      const storedToken =
+        Platform.OS === "web"
+          ? localStorage.getItem("token")
+          : await AsyncStorage.getItem("token");
+      setToken(storedToken || "");
+      const storedUserId =
+        Platform.OS === "web"
+          ? localStorage.getItem("userId")
+          : await AsyncStorage.getItem("userId");
+      setUserId(storedUserId || "");
     };
 
     retrieveToken();
   }, []);
 
   useEffect(() => {
-    if (token && userId) {
-      const intervalId = setInterval(fetchMapData, 100000);
-
-      return () => clearInterval(intervalId);
-    }
-  }, [token, userId]);
-
-  useEffect(() => {
     if (mapRef.current && region) {
       mapRef.current.animateToRegion(region, 1000);
     }
   }, [region]);
+
+  useEffect(() => {
+    const startBackgroundLocationTracking = async () => {
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status === "granted") {
+          setInterval(async () => {
+            const location = await Location.getCurrentPositionAsync({});
+            updateLocation(location.coords);
+          }, 2000);
+
+          await Location.startLocationUpdatesAsync(LOCATION_TASK_NAME, {
+            accuracy: Location.Accuracy.Balanced,
+            distanceInterval: 0,
+            deferredUpdatesInterval: 1000,
+            showsBackgroundLocationIndicator: true,
+            foregroundService: {
+              notificationTitle: "CAS4 Location Tracking",
+              notificationBody:
+                "Your location is being tracked in the background.",
+              notificationColor: "#FFFFFF",
+            },
+          });
+        } else {
+          Alert.alert("Background location permission not granted");
+        }
+      } catch (error) {
+        console.error("Error starting background location updates:", error);
+      }
+    };
+
+    startBackgroundLocationTracking();
+  }, []);
 
   return (
     <ParallaxScrollView token={token} userId={userId}>
@@ -300,29 +391,31 @@ export default function HomeScreen() {
             <View>
               <Link
                 href={`/notifications/${notification.id}`}
-                style={{ width: '100%' }}
+                style={{ width: "100%" }}
               >
-              <View style={styles.notificationBox}>
-                <Text style={styles.notificationBoxText}>Oh no, you are (or have been) in an alerted area in {formatDate(notification.createdAt)}!</Text>
-                <Text style={styles.notificationBoxText}>Click this banner to know more!</Text>
-              </View>
+                <View style={styles.notificationBox}>
+                  <Text style={styles.notificationBoxText}>
+                    Oh no, you are (or have been) in an alerted area in{" "}
+                    {formatDate(notification.createdAt)}!
+                  </Text>
+                  <Text style={styles.notificationBoxText}>
+                    Click this banner to know more!
+                  </Text>
+                </View>
               </Link>
             </View>
           ) : (
-            <>
-            </>
+            <></>
           )}
           <ThemedView>
             <Pressable onPress={handleLogout} style={styles.formButton}>
-              <Text style={{ color: 'white', textAlign: 'center' }}>Logout</Text>
+              <Text style={{ color: "white", textAlign: "center" }}>
+                Logout
+              </Text>
             </Pressable>
           </ThemedView>
           <View>
-            <MapView
-              ref={mapRef}
-              initialRegion={region}
-              style={styles.map}
-            >
+            <MapView ref={mapRef} initialRegion={region} style={styles.map}>
               <Marker coordinate={coordinates} title="Me" />
             </MapView>
           </View>
@@ -352,7 +445,9 @@ export default function HomeScreen() {
             </View>
             <View style={styles.buttonContainer}>
               <Pressable onPress={handleLogin} style={styles.formButton}>
-                <Text style={{ color: 'white', textAlign: 'center' }}>Login</Text>
+                <Text style={{ color: "white", textAlign: "center" }}>
+                  Login
+                </Text>
               </Pressable>
             </View>
           </ThemedView>
@@ -364,8 +459,8 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 20,
   },
   text: {
@@ -376,13 +471,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   formInput: {
-    width: '100%',
+    width: "100%",
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#ccc',
-    backgroundColor: '#f9f9f9',
+    borderColor: "#ccc",
+    backgroundColor: "#f9f9f9",
     marginBottom: 20,
   },
   buttonContainer: {
@@ -391,12 +486,12 @@ const styles = StyleSheet.create({
   formButton: {
     paddingVertical: 12,
     paddingHorizontal: 24,
-    backgroundColor: '#007AFF',
+    backgroundColor: "#007AFF",
     fontSize: 16,
-    fontWeight: '600',
-    textAlign: 'center',
+    fontWeight: "600",
+    textAlign: "center",
     borderRadius: 8,
-    color: 'white',
+    color: "white",
   },
   map: {
     height: 400,
@@ -404,15 +499,15 @@ const styles = StyleSheet.create({
   notificationBox: {
     padding: 40,
     borderRadius: 8,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    backgroundColor: '#EA2027',
+    backgroundColor: "#EA2027",
   },
   notificationBoxText: {
-    color: '#fff',
-    textAlign: 'center',
-    fontWeight: 'bold'
-  }
+    color: "#fff",
+    textAlign: "center",
+    fontWeight: "bold",
+  },
 });

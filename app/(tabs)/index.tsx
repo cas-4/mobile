@@ -22,6 +22,12 @@ import * as TaskManager from "expo-task-manager";
 
 const LOCATION_TASK_NAME = "background-location-task";
 
+/**
+ * Task manager task definition for background location tracking.
+ * This function processes incoming location data in the background.
+ * If an error occurs, it logs the error to the console.
+ * @param {Object} task - Task data including location and error.
+ */
 TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
   if (error) {
     console.error(error);
@@ -47,11 +53,20 @@ Notifications.setNotificationHandler({
   }),
 });
 
+/**
+ * Displays an alert with an error message related to push notification registration.
+ * @param {string} errorMessage - The error message to be shown in the alert.
+ */
 function handleRegistrationError(errorMessage: string) {
   Alert.alert("Error registering this device", errorMessage);
 }
 
-async function registerForPushNotificationsAsync() {
+/**
+ * Registers the device for push notifications. Requests permission and retrieves a push token.
+ * Supports Android-specific notification channel setup.
+ * @returns {Promise<string | undefined>} - The push token or undefined if registration fails.
+ */
+async function registerForPushNotificationsAsync(): Promise<string | undefined> {
   if (Platform.OS === "android") {
     Notifications.setNotificationChannelAsync("default", {
       name: "default",
@@ -116,6 +131,10 @@ export default function HomeScreen() {
   );
   const mapRef = useRef(null);
 
+  /**
+   * Stores the token in AsyncStorage (or localStorage for web). This is used to persist user tokens.
+   * @param {string} token - The token to be stored.
+   */
   const storeToken = async (token: string) => {
     if (Platform.OS === "web") {
       localStorage.setItem("token", token);
@@ -124,6 +143,10 @@ export default function HomeScreen() {
     }
   };
 
+  /**
+   * Stores the user ID in AsyncStorage (or localStorage for web). Used for persisting user session data.
+   * @param {string} userId - The user ID to be stored.
+   */
   const storeUserId = async (userId: string) => {
     if (Platform.OS === "web") {
       localStorage.setItem("userId", userId);
@@ -132,6 +155,10 @@ export default function HomeScreen() {
     }
   };
 
+  /**
+   * Handles the login process by sending login credentials to the server,
+   * storing the returned token and user ID, and registering for push notifications.
+   */
   const handleLogin = async () => {
     if (!email || !password) {
       Alert.alert("Error", "Email and password are required.");
@@ -215,10 +242,16 @@ export default function HomeScreen() {
     }
   };
 
+  /**
+   * Handles the logout process by removing the stored token and user ID, clearing user session data.
+   */
   const handleLogout = async () => {
     await removeToken();
   };
 
+  /**
+   * Removes the stored token and user ID from AsyncStorage (or localStorage for web).
+   */
   const removeToken = async () => {
     if (Platform.OS === "web") {
       localStorage.removeItem("token");
@@ -231,11 +264,21 @@ export default function HomeScreen() {
     setUserId("");
   };
 
-  const formatDate = (timestamp: string) => {
+  /**
+   * Formats a given timestamp into a readable date string with the format "Day Mon DD YYYY HH:mm".
+   * @param {string} timestamp - The timestamp (in seconds) to be formatted.
+   * @returns {string} - The formatted date string.
+   */
+  const formatDate = (timestamp: string): string => {
     const date = new Date(parseInt(timestamp) * 1000);
     return `${date.toDateString()} ${date.getHours()}:${(date.getMinutes() < 10 ? "0" : "") + date.getMinutes()}`;
   };
 
+  /**
+   * Updates the current user location both in the app state and by sending the data to the server.
+   * @param {LatLng} coords - The latitude and longitude coordinates.
+   * @param {number} speed - The speed of the device in m/s.
+   */
   const updateLocation = async (coords: LatLng, speed: number) => {
     setCoordinates({
       latitude: coords.latitude,
@@ -295,7 +338,7 @@ export default function HomeScreen() {
       const data = await response.json();
       console.log(data)
     } catch (err) {
-      console.error("Error on updating position"); 
+      console.error("Error on updating position");
     }
 
   }

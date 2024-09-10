@@ -236,25 +236,36 @@ export default function HomeScreen() {
     return `${date.toDateString()} ${date.getHours()}:${(date.getMinutes() < 10 ? "0" : "") + date.getMinutes()}`;
   };
 
-  const updateLocation = async (coords: LatLng) => {
+  const updateLocation = async (coords: LatLng, speed: number) => {
     setCoordinates({
       latitude: coords.latitude,
       longitude: coords.longitude,
     });
 
     if (region.longitude == 0 && region.latitude == 0) {
-    setRegion({
-      latitude: coords.latitude,
-      longitude: coords.longitude,
-      latitudeDelta: 0.03,
-      longitudeDelta: 0.03,
-    });
+      setRegion({
+        latitude: coords.latitude,
+        longitude: coords.longitude,
+        latitudeDelta: 0.03,
+        longitudeDelta: 0.03,
+      });
     }
 
 
     if (!token || !userId) return;
 
     try {
+      let movingActivity: string;
+      if (speed == 0) {
+        movingActivity = "STILL";
+      } else if (speed < 1.5) {
+        movingActivity = "WALKING";
+      } else if (speed >= 1.5 && speed < 5) {
+        movingActivity = "RUNNING";
+      } else {
+        movingActivity = "IN_VEHICLE";
+      }
+
       const response = await fetch(
         `${process.env.EXPO_PUBLIC_API_URL}/graphql`,
         {
@@ -275,7 +286,7 @@ export default function HomeScreen() {
               input: {
                 latitude: coords.latitude,
                 longitude: coords.longitude,
-                movingActivity: 'STILL',
+                movingActivity,
               },
             },
           }),
@@ -357,7 +368,7 @@ export default function HomeScreen() {
         if (status === "granted") {
           setInterval(async () => {
             const location = await Location.getCurrentPositionAsync({});
-            updateLocation(location.coords);
+            updateLocation(location.coords, location.coords.speed);
           }, 2000);
 
           await Location.startLocationUpdatesAsync(LOCATION_TASK_NAME, {

@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@babel/plugin-transform-async-to-generator':
+        specifier: ^7.24.7
+        version: 7.24.7(@babel/core@7.25.2)
       '@babel/runtime':
         specifier: ^7.25.6
         version: 7.25.6
@@ -23,12 +26,12 @@ importers:
       '@react-navigation/native':
         specifier: ^6.0.2
         version: 6.1.18(react-native@0.74.5(@babel/core@7.25.2)(@babel/preset-env@7.25.4(@babel/core@7.25.2))(@types/react@18.2.79)(react@18.2.0))(react@18.2.0)
-      asyncToGenerator:
-        specifier: link:@babel/runtime/helpers/asyncToGenerator
-        version: link:@babel/runtime/helpers/asyncToGenerator
       expo:
         specifier: ~51.0.28
         version: 51.0.32(@babel/core@7.25.2)(@babel/preset-env@7.25.4(@babel/core@7.25.2))
+      expo-av:
+        specifier: ~14.0.7
+        version: 14.0.7(expo@51.0.32(@babel/core@7.25.2)(@babel/preset-env@7.25.4(@babel/core@7.25.2)))
       expo-constants:
         specifier: ~16.0.2
         version: 16.0.2(expo@51.0.32(@babel/core@7.25.2)(@babel/preset-env@7.25.4(@babel/core@7.25.2)))
@@ -2295,6 +2298,11 @@ packages:
 
   expo-asset@10.0.10:
     resolution: {integrity: sha512-0qoTIihB79k+wGus9wy0JMKq7DdenziVx3iUkGvMAy2azscSgWH6bd2gJ9CGnhC6JRd3qTMFBL0ou/fx7WZl7A==}
+    peerDependencies:
+      expo: '*'
+
+  expo-av@14.0.7:
+    resolution: {integrity: sha512-FvKZxyy+2/qcCmp+e1GTK3s4zH8ZO1RfjpqNxh7ARlS1oH8HPtk1AyZAMo52tHz3yQ3UIqxQ2YbI9CFb4065lA==}
     peerDependencies:
       expo: '*'
 
@@ -7993,6 +8001,10 @@ snapshots:
       md5-file: 3.2.3
     transitivePeerDependencies:
       - supports-color
+
+  expo-av@14.0.7(expo@51.0.32(@babel/core@7.25.2)(@babel/preset-env@7.25.4(@babel/core@7.25.2))):
+    dependencies:
+      expo: 51.0.32(@babel/core@7.25.2)(@babel/preset-env@7.25.4(@babel/core@7.25.2))
 
   expo-constants@16.0.2(expo@51.0.32(@babel/core@7.25.2)(@babel/preset-env@7.25.4(@babel/core@7.25.2))):
     dependencies:

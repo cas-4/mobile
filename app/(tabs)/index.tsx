@@ -19,6 +19,7 @@ import * as Location from "expo-location";
 import Constants from "expo-constants";
 import { Link } from "expo-router";
 import * as TaskManager from "expo-task-manager";
+import { Audio } from 'expo-av';
 
 const LOCATION_TASK_NAME = "background-location-task";
 
@@ -40,9 +41,13 @@ TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
   }
 });
 
+interface NotificationPositionData {
+  movingActivity: string;
+}
 interface NotificationData {
   id: string;
   createdAt: string;
+  position: NotificationPositionData;
 }
 
 Notifications.setNotificationHandler({
@@ -130,6 +135,14 @@ export default function HomeScreen() {
     null,
   );
   const mapRef = useRef(null);
+
+  const [sound, setSound] = useState<Audio.Sound | null>(null);
+
+  async function playSound() {
+    const { sound } = await Audio.Sound.createAsync(require('../../assets/sounds/occhio.mp3'));
+    setSound(sound);
+    await sound.playAsync();
+  }
 
   /**
    * Stores the token in AsyncStorage (or localStorage for web). This is used to persist user tokens.
@@ -336,7 +349,6 @@ export default function HomeScreen() {
         },
       );
       const data = await response.json();
-      console.log(data)
     } catch (err) {
       console.error("Error on updating position");
     }
@@ -357,15 +369,20 @@ export default function HomeScreen() {
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              query: `{ notifications(seen: false) { id, createdAt } }`,
+              query: `{ notifications(seen: false) { id, createdAt, position { movingActivity } } }`,
             }),
           },
         );
 
         const data = await response.json();
 
-        if (data.data.notifications) {
+        if (data.data && data.data.notifications && data.data.notifications.length) {
           setNotification(data.data.notifications[0]);
+          if (data.data.notifications[0].position.movingActivity == "IN_VEHICLE") {
+            playSound();
+          }
+        } else {
+          setNotification(null);
         }
       } catch (err) {
         console.error("Fetch notifications:", err);
@@ -436,6 +453,10 @@ export default function HomeScreen() {
 
     startBackgroundLocationTracking();
   }, []);
+
+  useEffect(() => {
+    return sound ? () => { console.log('Unloading Sound'); sound.unloadAsync(); } : undefined;
+  }, [sound]);
 
   return (
     <ParallaxScrollView token={token} userId={userId}>

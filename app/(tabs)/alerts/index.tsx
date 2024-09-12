@@ -19,8 +19,6 @@ interface AlertData {
   id: string;
   userId: string;
   createdAt: string;
-  area: string;
-  level: string;
 }
 
 export default function AlertsScreen() {
@@ -42,7 +40,7 @@ export default function AlertsScreen() {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            query: `{ alerts { id, userId, createdAt, area, level } }`,
+            query: `{ alerts { id, userId, createdAt } }`,
           }),
         }
       );
@@ -115,18 +113,7 @@ export default function AlertsScreen() {
 
   const renderAlert = ({ item }: { item: AlertData }) => (
     <ThemedView style={styles.alertContainer}>
-      <View
-        style={[
-          styles.alertBox,
-          {
-            backgroundColor: item.level === 'ONE'
-              ? '#27ae60'
-              : item.level === 'TWO'
-              ? '#e67e22'
-              : '#c0392b',
-          },
-        ]}
-      >
+      <View style={styles.alertBox}>
         <Link
           href={`/alerts/${item.id}`}
           style={{ width: '100%' }}
@@ -135,7 +122,6 @@ export default function AlertsScreen() {
             <Ionicons
               name="calendar-outline"
               size={18}
-              color="white"
               style={styles.icon}
             />
             <ThemedText style={styles.dateText}>
@@ -190,6 +176,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
+    backgroundColor: '#fff'
   },
   dateRow: {
     flexDirection: 'row',
@@ -199,7 +186,7 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   dateText: {
-    color: '#fff',
+    color: '#000',
   },
   listContent: {
     paddingBottom: 32,

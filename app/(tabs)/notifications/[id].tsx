@@ -20,8 +20,8 @@ interface AlertData {
   userId: string;
   createdAt: string;
   area: string;
-  extendedArea: string;
-  level: string;
+  areaLevel2: string;
+  areaLevel3: string;
 }
 
 interface PositionData {
@@ -38,6 +38,7 @@ interface NotificationData {
   alert: AlertData;
   position: PositionData;
   seen: boolean;
+  level: string;
   createdAt: string;
 }
 
@@ -58,7 +59,8 @@ export default function NotificationIdScreen() {
   });
   const [coordinates, setCoordinates] = useState({ latitude: 44.49738301084014, longitude: 11.356121722966094 });
   const [polygon, setPolygon] = useState<PolygonCoordinates[]>([]);
-  const [extendedPolygon, setExtendedPolygon] = useState<PolygonCoordinates[]>([]);
+  const [level2Polygon, setLevel2Polygon] = useState<PolygonCoordinates[]>([]);
+  const [level3Polygon, setLevel3Polygon] = useState<PolygonCoordinates[]>([]);
   const mapRef = useRef<MapView | null>(null);
 
   const checkAuth = useCallback(async () => {
@@ -130,9 +132,10 @@ export default function NotificationIdScreen() {
           body: JSON.stringify({
             query: `{ notifications(id: ${id}) {
              id,
-             alert { id, userId, createdAt, area, extendedArea, level, reachedUsers },
+             alert { id, userId, createdAt, area, areaLevel2, areaLevel3, reachedUsers },
              position {id, userId, createdAt, latitude, longitude, movingActivity},
              seen,
+             level,
              createdAt
             } }`,
           }),
@@ -154,8 +157,8 @@ export default function NotificationIdScreen() {
             latitude: parseFloat(pair[1]),
           }));
 
-        const extendedCoordinatesString = notificationData.alert.extendedArea.substring(9, notificationData.alert.extendedArea.length - 2);
-        const extendedCoordinates = extendedCoordinatesString
+        const level2CoordinatesString = notificationData.alert.areaLevel2.substring(9, notificationData.alert.areaLevel2.length - 2);
+        const level2Coordinates = level2CoordinatesString
           .split(',')
           .map((coord: string) => coord.trim().split(' '))
           .map((pair: string[]) => ({
@@ -163,10 +166,21 @@ export default function NotificationIdScreen() {
             latitude: parseFloat(pair[1]),
           }));
 
+        const level3CoordinatesString = notificationData.alert.areaLevel3.substring(9, notificationData.alert.areaLevel3.length - 2);
+        const level3Coordinates = level3CoordinatesString
+          .split(',')
+          .map((coord: string) => coord.trim().split(' '))
+          .map((pair: string[]) => ({
+            longitude: parseFloat(pair[0]),
+            latitude: parseFloat(pair[1]),
+          }));
+
+
         setCoordinates({ latitude: notificationData.position.latitude, longitude: notificationData.position.longitude });
         setNotification(notificationData);
         setPolygon(coordinates);
-        setExtendedPolygon(extendedCoordinates);
+        setLevel2Polygon(level2Coordinates);
+        setLevel3Polygon(level3Coordinates);
         setRegion({
           latitude: coordinates[0]?.latitude || region.latitude,
           longitude: coordinates[0]?.longitude || region.longitude,
@@ -248,7 +262,12 @@ export default function NotificationIdScreen() {
                 fillColor="rgba(192, 57, 43, 0.4)"
               />
               <Polygon
-                coordinates={extendedPolygon}
+                coordinates={level2Polygon}
+                strokeColor="#c0392b"
+                fillColor="rgba(192, 57, 43, 0.4)"
+              />
+              <Polygon
+                coordinates={level3Polygon}
                 strokeColor="#c0392b"
                 fillColor="rgba(192, 57, 43, 0.4)"
               />
@@ -279,7 +298,7 @@ export default function NotificationIdScreen() {
               color={theme === 'light' ? Colors.light.text : Colors.dark.text}
               style={styles.icon}
             />
-            <ThemedText>Level of alert: {notification.alert.level}</ThemedText>
+            <ThemedText>Level of alert: {notification.level}</ThemedText>
           </ThemedView>
         </>
       )}

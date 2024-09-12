@@ -20,8 +20,8 @@ interface AlertData {
   userId: string;
   createdAt: string;
   area: string;
-  extendedArea: string;
-  level: string;
+  areaLevel2: string;
+  areaLevel3: string;
 }
 
 interface PolygonCoordinates {
@@ -40,7 +40,8 @@ export default function AlertIdScreen() {
     longitudeDelta: 0.03,
   });
   const [polygon, setPolygon] = useState<PolygonCoordinates[]>([]);
-  const [extendedPolygon, setExtendedPolygon] = useState<PolygonCoordinates[]>([]);
+  const [level2Polygon, setLevel2Polygon] = useState<PolygonCoordinates[]>([]);
+  const [level3Polygon, setLevel3Polygon] = useState<PolygonCoordinates[]>([]);
   const mapRef = useRef<MapView | null>(null);
 
   const checkAuth = useCallback(async () => {
@@ -83,7 +84,7 @@ export default function AlertIdScreen() {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            query: `{ alerts(id: ${id}) { id, userId, createdAt, area, extendedArea, level } }`,
+            query: `{ alerts(id: ${id}) { id, userId, createdAt, area, areaLevel2, areaLevel3 } }`,
           }),
         }
       );
@@ -103,8 +104,17 @@ export default function AlertIdScreen() {
             latitude: parseFloat(pair[1]),
           }));
 
-        const extendedCoordinatesString = alertData.extendedArea.substring(9, alertData.extendedArea.length - 2);
-        const extendedCoordinates = extendedCoordinatesString
+        const level2CoordinatesString = alertData.areaLevel2.substring(9, alertData.areaLevel2.length - 2);
+        const level2Coordinates = level2CoordinatesString
+          .split(',')
+          .map((coord: string) => coord.trim().split(' '))
+          .map((pair: string[]) => ({
+            longitude: parseFloat(pair[0]),
+            latitude: parseFloat(pair[1]),
+          }));
+
+        const level3CoordinatesString = alertData.areaLevel3.substring(9, alertData.areaLevel3.length - 2);
+        const level3Coordinates = level3CoordinatesString
           .split(',')
           .map((coord: string) => coord.trim().split(' '))
           .map((pair: string[]) => ({
@@ -114,7 +124,8 @@ export default function AlertIdScreen() {
 
         setAlert(alertData);
         setPolygon(coordinates);
-        setExtendedPolygon(extendedCoordinates);
+        setLevel2Polygon(level2Coordinates);
+        setLevel3Polygon(level3Coordinates);
         setRegion({
           latitude: coordinates[0]?.latitude || region.latitude,
           longitude: coordinates[0]?.longitude || region.longitude,
@@ -188,7 +199,12 @@ export default function AlertIdScreen() {
                 fillColor="rgba(192, 57, 43, 0.4)"
               />
               <Polygon
-                coordinates={extendedPolygon}
+                coordinates={level2Polygon}
+                strokeColor="#c0392b"
+                fillColor="rgba(192, 57, 43, 0.4)"
+              />
+              <Polygon
+                coordinates={level3Polygon}
                 strokeColor="#c0392b"
                 fillColor="rgba(192, 57, 43, 0.4)"
               />
@@ -210,7 +226,6 @@ export default function AlertIdScreen() {
               color={theme === 'light' ? Colors.light.text : Colors.dark.text}
               style={styles.icon}
             />
-            <ThemedText>{alert.level}</ThemedText>
           </ThemedView>
         </>
       )}

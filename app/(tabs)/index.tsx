@@ -44,9 +44,18 @@ TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
 interface NotificationPositionData {
   movingActivity: string;
 }
+
+interface NotificationAlertData {
+  text1: string;
+  text2: string;
+  text3: string;
+}
+
 interface NotificationData {
   id: string;
   createdAt: string;
+  level: string;
+  alert: NotificationAlertData;
   position: NotificationPositionData;
 }
 
@@ -369,7 +378,7 @@ export default function HomeScreen() {
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              query: `{ notifications(seen: false) { id, createdAt, position { movingActivity } } }`,
+              query: `{ notifications(seen: false) { id, createdAt, level, alert { text1 text2 text3 } position { movingActivity } } }`,
             }),
           },
         );
@@ -394,7 +403,7 @@ export default function HomeScreen() {
 
       return () => clearInterval(intervalId);
     } else {
-      setNotification("");
+      setNotification(null);
     }
   }, [token, userId]);
 
@@ -473,6 +482,13 @@ export default function HomeScreen() {
                     Oh no, you are (or have been) in an alerted area in{" "}
                     {formatDate(notification.createdAt)}!
                   </Text>
+                  <View style={styles.notificationDelimiter} />
+                  <Text style={[styles.notificationBoxText, { fontStyle: 'italic' }]}>"
+                    {notification.level == 'ONE' ?
+                      notification.alert.text1 : notification.level == 'TWO' ?
+                        notification.alert.text2 : notification.alert.text3}
+                    "</Text>
+                  <View style={styles.notificationDelimiter} />
                   <Text style={styles.notificationBoxText}>
                     Click this banner to know more!
                   </Text>
@@ -481,7 +497,8 @@ export default function HomeScreen() {
             </View>
           ) : (
             <></>
-          )}
+          )
+          }
           <ThemedView>
             <Pressable onPress={handleLogout} style={styles.formButton}>
               <Text style={{ color: "white", textAlign: "center" }}>
@@ -585,4 +602,10 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontWeight: "bold",
   },
+  notificationDelimiter: {
+    marginVertical: 30,
+    width: '100%',
+    height: 1,
+    backgroundColor: '#B2171B'
+  }
 });

@@ -147,8 +147,23 @@ export default function HomeScreen() {
 
   const [sound, setSound] = useState<Audio.Sound | null>(null);
 
-  async function playSound() {
-    const { sound } = await Audio.Sound.createAsync(require('../../assets/sounds/occhio.mp3'));
+  async function playSound(alert: string, level: string) {
+    let levelDigit: string;
+    switch (level) {
+      case "ONE":
+        levelDigit = "1";
+        break;
+      case "TWO":
+        levelDigit = "2";
+        break;
+      case "THREE":
+        levelDigit = "3";
+        break;
+      default: return;
+    }
+    const { sound } = await Audio.Sound.createAsync({
+      uri: `${process.env.EXPO_PUBLIC_API_URL}/assets/sounds/alert-${alert}-text-${levelDigit}.mp3`,
+    });
     setSound(sound);
     await sound.playAsync();
   }
@@ -378,7 +393,7 @@ export default function HomeScreen() {
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              query: `{ notifications(seen: false) { id, createdAt, level, alert { text1 text2 text3 } position { movingActivity } } }`,
+              query: `{ notifications(seen: false) { id, createdAt, level, alert { id, text1 text2 text3 } position { movingActivity } } }`,
             }),
           },
         );
@@ -386,9 +401,10 @@ export default function HomeScreen() {
         const data = await response.json();
 
         if (data.data && data.data.notifications && data.data.notifications.length) {
-          setNotification(data.data.notifications[0]);
-          if (data.data.notifications[0].position.movingActivity == "IN_VEHICLE") {
-            playSound();
+          const n = data.data.notifications[0];
+          setNotification(notification);
+          if (n.position.movingActivity == "IN_VEHICLE") {
+            playSound(n.alert.id, n.level);
           }
         } else {
           setNotification(null);

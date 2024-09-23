@@ -18,6 +18,8 @@ After that you need to edit the `.env` file and set up:
 
 - `EXPO_PUBLIC_API_URL`: refers to the backend URL.
 
+- `EXPO_PUBLIC_ALERTD_URL`: refers to the alertd URL.
+
 And start the Expo app.
 
 ```

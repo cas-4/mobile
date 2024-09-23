@@ -219,14 +219,6 @@ export default function AlertIdScreen() {
             />
             <ThemedText>{formatDate(alert.createdAt)}</ThemedText>
           </ThemedView>
-          <ThemedView style={styles.dateRow}>
-            <Ionicons
-              name="alert-circle-outline"
-              size={18}
-              color={theme === 'light' ? Colors.light.text : Colors.dark.text}
-              style={styles.icon}
-            />
-          </ThemedView>
         </>
       )}
     </ParallaxScrollView>

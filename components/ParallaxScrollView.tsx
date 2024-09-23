@@ -1,5 +1,5 @@
-import { useState, type PropsWithChildren,  useEffect, } from 'react';
-import { StyleSheet, SafeAreaView, useColorScheme, View, Text, Pressable } from 'react-native';
+import { useState, type PropsWithChildren, useEffect, } from 'react';
+import { StyleSheet, SafeAreaView, useColorScheme, View, Text, Pressable, Platform } from 'react-native';
 
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from './ThemedText';
@@ -64,23 +64,24 @@ export default function ParallaxScrollView({
     <ThemedView style={styles.container}>
       <SafeAreaView style={{
         backgroundColor: (theme === 'light' ? 'rgba(0, 0, 0, .5)' : 'rgba(100, 100, 100, .5)'),
+        paddingTop: (Platform.OS == "android" ? 40 : 0)
       }}>
         <ThemedText type="title" style={{ color: 'white', paddingVertical: 10 }}>CAS4</ThemedText>
-          <SafeAreaView>
-            {token && userId ? (
-              <Pressable onPress={() => router.push('/notifications')} style={styles.notificationWrapper}>
-                {notifications.length > 0 && (
-                  <View style={styles.notificationCircle}>
-                    <Text style={styles.notificationCircleText}>{notifications.length}</Text>
-                  </View>
-                )}
-                <Ionicons name="notifications-outline" size={32} color="white" />
-              </Pressable>
-            ) : (
-              <>
-              </>
-            )}
-          </SafeAreaView>
+        <SafeAreaView>
+          {token && userId ? (
+            <Pressable onPress={() => router.push('/notifications')} style={styles.notificationWrapper}>
+              {notifications.length > 0 && (
+                <View style={styles.notificationCircle}>
+                  <Text style={styles.notificationCircleText}>{notifications.length}</Text>
+                </View>
+              )}
+              <Ionicons name="notifications-outline" size={32} color="white" />
+            </Pressable>
+          ) : (
+            <>
+            </>
+          )}
+        </SafeAreaView>
       </SafeAreaView>
       <ThemedView style={styles.content}>{children}</ThemedView>
     </ThemedView>

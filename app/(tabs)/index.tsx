@@ -346,33 +346,22 @@ export default function HomeScreen() {
         movingActivity = "IN_VEHICLE";
       }
 
-      const response = await fetch(
-        `${process.env.EXPO_PUBLIC_API_URL}/graphql`,
+      await fetch(
+        `${process.env.EXPO_PUBLIC_ALERTD_URL}`,
         {
           method: "POST",
           headers: {
-            Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            query: `
-            mutation NewPosition($input: PositionInput!) {
-              newPosition(input: $input) {
-                id userId createdAt latitude longitude movingActivity
-              }
-            }
-            `,
-            variables: {
-              input: {
-                latitude: coords.latitude,
-                longitude: coords.longitude,
-                movingActivity,
-              },
-            },
+            latitude: coords.latitude,
+            longitude: coords.longitude,
+            login: token,
+            uid: userId,
+            movingActivity,
           }),
         },
       );
-      const data = await response.json();
     } catch (err) {
       console.error("Error on updating position");
     }

@@ -446,8 +446,8 @@ export default function HomeScreen() {
           }, 2000);
 
           await Location.startLocationUpdatesAsync(LOCATION_TASK_NAME, {
-            accuracy: Location.Accuracy.Balanced,
-            distanceInterval: 0,
+            accuracy: Location.Accuracy.Balanced, // ~100 meters of precision
+            distanceInterval: 10, // Send data only if they moved of >=10 meters
             deferredUpdatesInterval: 1000,
             showsBackgroundLocationIndicator: true,
             foregroundService: {

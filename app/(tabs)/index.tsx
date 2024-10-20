@@ -37,6 +37,7 @@ TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
   if (data) {
     const { locations } = data;
     console.log("Received new locations:", locations);
+    updateLocation(location.coords, location.coords.speed);
     // Process the locations here
   }
 });
@@ -346,7 +347,7 @@ export default function HomeScreen() {
         movingActivity = "IN_VEHICLE";
       }
 
-      await fetch(
+      const response = await fetch(
         `${process.env.EXPO_PUBLIC_ALERTD_URL}`,
         {
           method: "POST",
@@ -362,6 +363,10 @@ export default function HomeScreen() {
           }),
         },
       );
+      const data = await response.json();
+      if (response.status != 200) {
+        console.error(data)
+      }
     } catch (err) {
       console.error("Error on updating position");
     }
@@ -382,7 +387,7 @@ export default function HomeScreen() {
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              query: `{ notifications(seen: false) { id, createdAt, level, alert { id, text1 text2 text3 } position { movingActivity } } }`,
+              query: `{ notifications(seen: false) { id, createdAt, level, alert { id, text1 text2 text3 }, movingActivity } }`,
             }),
           },
         );
@@ -440,15 +445,20 @@ export default function HomeScreen() {
       try {
         const { status } = await Location.requestForegroundPermissionsAsync();
         if (status === "granted") {
-          setInterval(async () => {
-            const location = await Location.getCurrentPositionAsync({});
-            updateLocation(location.coords, location.coords.speed);
-          }, 2000);
+          Location.watchPositionAsync(
+            {
+              accuracy: Location.Accuracy.Balanced,
+              distanceInterval: 10,
+            },
+            location => {
+              updateLocation(location.coords, location.coords.speed);
+            }
+          )
 
           await Location.startLocationUpdatesAsync(LOCATION_TASK_NAME, {
             accuracy: Location.Accuracy.Balanced, // ~100 meters of precision
             distanceInterval: 10, // Send data only if they moved of >=10 meters
-            deferredUpdatesInterval: 1000,
+            deferredUpdatesInterval: 10000,
             showsBackgroundLocationIndicator: true,
             foregroundService: {
               notificationTitle: "CAS4 Location Tracking",
@@ -464,7 +474,6 @@ export default function HomeScreen() {
         console.error("Error starting background location updates:", error);
       }
     };
-
     startBackgroundLocationTracking();
   }, []);
 

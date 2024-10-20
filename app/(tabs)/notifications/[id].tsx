@@ -24,19 +24,11 @@ interface AlertData {
   areaLevel3: string;
 }
 
-interface PositionData {
-  id: string;
-  userId: string;
-  createdAt: string;
-  latitude: number;
-  longitude: number;
-  movingActivity: string;
-}
-
 interface NotificationData {
   id: string;
   alert: AlertData;
-  position: PositionData;
+  userId: string;
+  movingActivity: string;
   seen: boolean;
   level: string;
   createdAt: string;
@@ -130,14 +122,11 @@ export default function NotificationIdScreen() {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            query: `{ notifications(id: ${id}) {
-             id,
-             alert { id, userId, createdAt, area, areaLevel2, areaLevel3, reachedUsers },
-             position {id, userId, createdAt, latitude, longitude, movingActivity},
-             seen,
-             level,
-             createdAt
-            } }`,
+            query: `{notifications(id: ${id}) {
+                id,
+                alert { id, userId, createdAt, area, areaLevel2, areaLevel3, text1, text2, text3, reachedUsers },
+                userId, latitude, longitude, movingActivity, level, seen, createdAt
+            }}`,
           }),
         }
       );
@@ -176,7 +165,7 @@ export default function NotificationIdScreen() {
           }));
 
 
-        setCoordinates({ latitude: notificationData.position.latitude, longitude: notificationData.position.longitude });
+        setCoordinates({ latitude: notificationData.latitude, longitude: notificationData.longitude });
         setNotification(notificationData);
         setPolygon(coordinates);
         setLevel2Polygon(level2Coordinates);

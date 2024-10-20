@@ -17,9 +17,7 @@
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "This app needs access to your location.",
         "NSLocationAlwaysUsageDescription": "This app needs access to your location even when in the background.",
-        "UIBackgroundModes": [
-          "location"
-        ]
+        "UIBackgroundModes": ["location", "fetch", "remote-notifications"]
       }
     },
     "android": {

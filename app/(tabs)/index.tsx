@@ -10,14 +10,14 @@ import {
 import ParallaxScrollView from "@/components/ParallaxScrollView";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import MapView, { LatLng, Marker } from "react-native-maps";
 import * as Notifications from "expo-notifications";
 import * as Device from "expo-device";
 import * as Location from "expo-location";
 import Constants from "expo-constants";
-import { Link } from "expo-router";
+import { Link, useFocusEffect } from "expo-router";
 import * as TaskManager from "expo-task-manager";
 import { Audio } from 'expo-av';
 
@@ -370,52 +370,54 @@ export default function HomeScreen() {
     } catch (err) {
       console.error("Error on updating position");
     }
-
   }
 
-  useEffect(() => {
-    const fetchNotifications = async () => {
-      if (!token || !userId) return;
+  /**
+   * Fetch notifications from the server for a given user.
+   */
+  const fetchNotifications = async () => {
+    if (!token || !userId) return;
 
-      try {
-        const response = await fetch(
-          `${process.env.EXPO_PUBLIC_API_URL}/graphql`,
-          {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              query: `{ notifications(seen: false) { id, createdAt, level, alert { id, text1 text2 text3 }, movingActivity } }`,
-            }),
+    try {
+      const response = await fetch(
+        `${process.env.EXPO_PUBLIC_API_URL}/graphql`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
           },
-        );
+          body: JSON.stringify({
+            query: `{ notifications(seen: false) { id, createdAt, level, alert { id, text1 text2 text3 }, movingActivity } }`,
+          }),
+        },
+      );
 
-        const data = await response.json();
+      const data = await response.json();
 
-        if (data.data && data.data.notifications && data.data.notifications.length) {
-          const n = data.data.notifications[0];
-          setNotification(notification);
-          if (n.position.movingActivity == "IN_VEHICLE") {
-            playSound(n.alert.id, n.level);
-          }
-        } else {
-          setNotification(null);
+      if (data.data && data.data.notifications && data.data.notifications.length) {
+        const n = data.data.notifications[0];
+        setNotification(n);
+        if (n.movingActivity == "IN_VEHICLE") {
+          playSound(n.alert.id, n.level);
         }
-      } catch (err) {
-        console.error("Fetch notifications:", err);
+      } else {
+        setNotification(null);
       }
-    };
-
-    if (token && userId) {
-      const intervalId = setInterval(fetchNotifications, 10000);
-
-      return () => clearInterval(intervalId);
-    } else {
-      setNotification(null);
+    } catch (err) {
+      console.error("Fetch notifications:", err);
     }
+  };
+
+  useEffect(() => {
+    Notifications.addNotificationReceivedListener(() => {
+      fetchNotifications();
+    });
   }, [token, userId]);
+
+  useFocusEffect(useCallback(() => {
+    fetchNotifications();
+  }, []))
 
   useEffect(() => {
     const retrieveToken = async () => {

@@ -1,10 +1,11 @@
-import { useState, type PropsWithChildren, useEffect, } from 'react';
+import { useState, type PropsWithChildren, useEffect, useCallback, } from 'react';
 import { StyleSheet, SafeAreaView, useColorScheme, View, Text, Pressable, Platform } from 'react-native';
 
+import * as Notifications from "expo-notifications";
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from './ThemedText';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 
 
 type Props = PropsWithChildren<{
@@ -22,43 +23,47 @@ export default function ParallaxScrollView({
   const theme = useColorScheme() ?? 'light';
   const [notifications, setNotifications] = useState([]);
 
-  useEffect(() => {
-    const fetchNotifications = async () => {
-      if (!token || !userId) return;
+  /**
+   * Fetch notifications from the server for a given user.
+   */
+  const fetchNotifications = async () => {
+    if (!token || !userId) return;
 
-      try {
-        const response = await fetch(
-          `${process.env.EXPO_PUBLIC_API_URL}/graphql`,
-          {
-            method: 'POST',
-            headers: {
-              Authorization: `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              query: `{ notifications(seen: false) { id, createdAt } }`,
-            }),
-          }
-        );
-
-        const data = await response.json();
-
-        if (data.data.notifications) {
-          setNotifications(data.data.notifications);
+    try {
+      const response = await fetch(
+        `${process.env.EXPO_PUBLIC_API_URL}/graphql`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            query: `{ notifications(seen: false) { id, createdAt } }`,
+          }),
         }
-      } catch (err) {
-        console.error('Fetch notifications:', err);
+      );
+
+      const data = await response.json();
+
+      if (data.data.notifications) {
+        setNotifications(data.data.notifications);
       }
-    };
-
-    if (token && userId) {
-      const intervalId = setInterval(fetchNotifications, 2000);
-
-      return () => clearInterval(intervalId);
-    } else {
-      setNotifications([]);
+    } catch (err) {
+      console.error('Fetch notifications:', err);
     }
+  };
+
+
+  useEffect(() => {
+    Notifications.addNotificationReceivedListener(() => {
+      fetchNotifications();
+    });
   }, [token, userId]);
+
+  useFocusEffect(useCallback(() => {
+    fetchNotifications();
+  }, []))
 
   return (
     <ThemedView style={styles.container}>

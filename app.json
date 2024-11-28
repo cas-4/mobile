@@ -17,7 +17,11 @@
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "This app needs access to your location.",
         "NSLocationAlwaysUsageDescription": "This app needs access to your location even when in the background.",
-        "UIBackgroundModes": ["location", "fetch", "remote-notifications"]
+        "UIBackgroundModes": [
+          "location",
+          "fetch",
+          "remote-notifications"
+        ]
       }
     },
     "android": {
@@ -39,7 +43,8 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      "expo-font"
     ],
     "experiments": {
       "typedRoutes": true

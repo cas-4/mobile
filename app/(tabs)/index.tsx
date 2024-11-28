@@ -348,7 +348,7 @@ export default function HomeScreen() {
       }
 
       const response = await fetch(
-        `${process.env.EXPO_PUBLIC_API_URL}`,
+        `${process.env.EXPO_PUBLIC_API_URL}/graphql`,
         {
           method: "POST",
           headers: {
@@ -359,7 +359,7 @@ export default function HomeScreen() {
             query: `
             mutation NewPosition($input: PositionInput!) {
               newPosition(input: $input) {
-                id userId createdAt latitude longitude movingActivity
+                id
               }
             }
             `,

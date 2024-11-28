@@ -348,18 +348,28 @@ export default function HomeScreen() {
       }
 
       const response = await fetch(
-        `${process.env.EXPO_PUBLIC_ALERTD_URL}`,
+        `${process.env.EXPO_PUBLIC_API_URL}`,
         {
           method: "POST",
           headers: {
+            Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            latitude: coords.latitude,
-            longitude: coords.longitude,
-            login: token,
-            uid: userId,
-            movingActivity,
+            query: `
+            mutation NewPosition($input: PositionInput!) {
+              newPosition(input: $input) {
+                id userId createdAt latitude longitude movingActivity
+              }
+            }
+            `,
+            variables: {
+              input: {
+                latitude: coords.latitude,
+                longitude: coords.longitude,
+                movingActivity,
+              },
+            },
           }),
         },
       );

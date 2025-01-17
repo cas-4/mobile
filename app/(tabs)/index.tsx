@@ -148,23 +148,8 @@ export default function HomeScreen() {
 
   const [sound, setSound] = useState<Audio.Sound | null>(null);
 
-  async function playSound(alert: string, level: string) {
-    let levelDigit: string;
-    switch (level) {
-      case "ONE":
-        levelDigit = "1";
-        break;
-      case "TWO":
-        levelDigit = "2";
-        break;
-      case "THREE":
-        levelDigit = "3";
-        break;
-      default: return;
-    }
-    const { sound } = await Audio.Sound.createAsync({
-      uri: `${process.env.EXPO_PUBLIC_API_URL}/assets/sounds/alert-${alert}-text-${levelDigit}.mp3`,
-    });
+  async function playSound(uri: any) {
+    const { sound } = await Audio.Sound.createAsync({ uri });
     setSound(sound);
     await sound.playAsync();
   }
@@ -398,7 +383,7 @@ export default function HomeScreen() {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            query: `{ notifications(seen: false) { id, createdAt, level, alert { id, text1 text2 text3 }, movingActivity } }`,
+            query: `{ notifications(seen: false) { id, createdAt, level, alert { id, text1 text2 text3, audio1, audio2, audio3 }, movingActivity } }`,
           }),
         },
       );
@@ -409,7 +394,27 @@ export default function HomeScreen() {
         const n = data.data.notifications[0];
         setNotification(n);
         if (n.movingActivity == "IN_VEHICLE") {
-          playSound(n.alert.id, n.level);
+          let source = null;
+          switch (n.level) {
+            case "ONE":
+              source = n.alert.audio1;
+              break;
+            case "TWO":
+              source = n.alert.audio2;
+              break;
+            case "THREE":
+              source = n.alert.audio3;
+              break;
+          }
+
+          if (source) {
+            let binary = '';
+            source.forEach((byte: any) => {
+              binary += String.fromCharCode(byte);
+            });
+            const uri = `data:audio/mpeg;base64,${btoa(binary)}`
+            playSound(uri);
+          }
         }
       } else {
         setNotification(null);

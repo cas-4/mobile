@@ -12,7 +12,7 @@ class at the [University of Bologna](https://unibo.it).
 You need:
 - Node `v21.7.1`. We strongly suggest [`fnm`](https://github.com/Schniz/fnm) or
   [`nvm`](https://github.com/nvm-sh/nvm) for Node versions management.
-- PnpM or NPM (better the first one).
+- Yarn.
 
 After that you need to edit the `.env` file and set up:
 
@@ -21,7 +21,7 @@ After that you need to edit the `.env` file and set up:
 And start the Expo app.
 
 ```
-pnpm run start
+yarn start
 ```
 
 ## Deployment

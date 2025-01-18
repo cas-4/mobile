@@ -258,6 +258,7 @@ export default function HomeScreen() {
             });
           })
           .catch((error: any) => alert(`${error}`));
+        fetchNotifications();
       }
     } catch (err) {
       console.error("Login Error:", err);

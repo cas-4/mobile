@@ -22,7 +22,8 @@
           "fetch",
           "remote-notifications"
         ]
-      }
+      },
+      "bundleIdentifier": "com.unibo.cas4"
     },
     "android": {
       "adaptiveIcon": {

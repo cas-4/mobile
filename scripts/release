@@ -4,6 +4,7 @@ if [ $# -eq 0 ]; then
 fi
 
 sed -i "4s/.*/  \"version\": \"$1\",/" package.json
+sed -i "5s/.*/    \"version\": \"$1\",/" app.json
 pnpm i
 git add package.* pnpm-lock.yaml
 git commit -m "release: version $1"

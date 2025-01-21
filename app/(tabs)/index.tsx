@@ -463,6 +463,10 @@ export default function HomeScreen() {
       try {
         const { status } = await Location.requestForegroundPermissionsAsync();
         if (status === "granted") {
+          Location.getCurrentPositionAsync({}).then(location => {
+            updateLocation(location.coords, location.coords.speed);
+          });
+
           Location.watchPositionAsync(
             {
               accuracy: Location.Accuracy.Balanced,

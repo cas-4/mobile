@@ -467,6 +467,11 @@ export default function HomeScreen() {
             updateLocation(location.coords, location.coords.speed);
           });
 
+          setInterval(async () => {
+            const location = await Location.getCurrentPositionAsync({});
+            updateLocation(location.coords, location.coords.speed);
+          }, 2000);
+
           Location.watchPositionAsync(
             {
               accuracy: Location.Accuracy.Balanced,
